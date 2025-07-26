@@ -1,0 +1,102 @@
+<template>
+  <div class="swipe">
+    <div v-if="loading">Cargando...</div>
+    <div v-else>
+      <div v-if="currentUser">
+        <img
+          v-if="currentUser.photos.length"
+          :src="currentUser.photos[0].url"
+          alt="foto de perfil"
+          class="swipe__photo"
+        />
+        <div class="swipe__info">
+          <p>{{ currentUser.email }}</p>
+          <p>Nacido en {{ currentUser.birthPlace }}</p>
+        </div>
+        <div class="swipe__actions">
+          <button @click="dislike">❌</button>
+          <button @click="like">❤️</button>
+        </div>
+      </div>
+      <div v-else>
+        <p>No hay más usuarios por ahora.</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, onMounted, computed } from 'vue';
+import { getFeed } from '../graphql/queries';
+
+interface Photo {
+  url: string;
+  sign?: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+  photos: Photo[];
+}
+
+const users = ref<User[]>([]);
+const index = ref<number>(0);
+const loading = ref<boolean>(true);
+
+const currentUser = computed(() => users.value[index.value]);
+
+onMounted(async () => {
+  try {
+    const data = await getFeed();
+    users.value = data.feed as User[];
+  } catch (err) {
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+});
+
+function like() {
+  index.value++;
+  // Aquí podrías llamar a una mutación GraphQL para registrar el "like"
+}
+
+function dislike() {
+  index.value++;
+}
+</script>
+
+<style scoped>
+.swipe {
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+.swipe__photo {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.swipe__actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
+}
+.swipe__actions button {
+  font-size: 2rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+</style>

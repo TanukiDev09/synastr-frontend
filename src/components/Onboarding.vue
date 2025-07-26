@@ -63,8 +63,8 @@ async function handleSubmit() {
       birthTime: form.birthTime,
       birthPlace: form.birthPlace,
     });
-    // En un entorno real debes guardar el token y navegar al feed
-    router.push('/feed');
+    // Guarda el token de autenticación y navega a la interfaz de swipe
+    router.push('/swipe');
   } catch (err) {
     error.value = 'Error al registrarse. Por favor, intenta de nuevo.';
     console.error(err);
