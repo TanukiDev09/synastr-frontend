@@ -1,0 +1,37 @@
+/* Estilos base globales para Synastr */
+
+/* Variables de color */
+$color-primary: #6c63ff;
+$color-secondary: #f4f4f4;
+$color-text: #333;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: $color-secondary;
+  color: $color-text;
+}
+
+a {
+  color: $color-primary;
+  text-decoration: none;
+}
+
+/* Ejemplo de convención BEM */
+.photoUploader {
+  &__item {
+    border: 2px dashed $color-primary;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    &--suggested {
+      background-color: lighten($color-primary, 40%);
+    }
+  }
+}
