@@ -1,7 +1,6 @@
 import { request } from './client';
 
-// ✅ 1. SE DEFINEN LAS INTERFACES PARA LOS DATOS Y RESPUESTAS
-
+// ✅ Interfaces de tipos para las entidades GraphQL
 interface Photo {
   url: string;
   sign?: string;
@@ -16,7 +15,7 @@ interface User {
   photos: Photo[];
 }
 
-// Interfaz para la respuesta de la mutación signUp
+// Respuesta de la mutación signUp
 interface SignUpResponse {
   signUp: {
     token: string;
@@ -24,18 +23,29 @@ interface SignUpResponse {
   };
 }
 
-// Interfaz para la respuesta de la consulta feed
+// Respuesta de la consulta feed
 interface FeedResponse {
   feed: User[];
 }
 
-// Interfaz para la respuesta de la consulta likers
+// Respuesta de la consulta likers
 interface LikersResponse {
   likers: User[];
 }
 
+// ✅ Nuevas interfaces para la consulta de matches
+interface Match {
+  id: string;
+  user: User;
+}
 
-// Define the sign‑up mutation
+interface MatchesResponse {
+  matches: Match[];
+}
+
+// ---------------------- Mutations ----------------------
+
+// Mutación para registrar un nuevo usuario
 const SIGN_UP_MUTATION = /* GraphQL */ `
   mutation SignUp($input: SignUpInput!) {
     signUp(input: $input) {
@@ -51,18 +61,24 @@ const SIGN_UP_MUTATION = /* GraphQL */ `
   }
 `;
 
+/**
+ * Realiza la mutación de registro de usuario.
+ *
+ * @param input Datos del formulario de registro
+ */
 export async function signUp(input: {
   email: string;
   password: string;
   birthDate: string;
   birthTime: string;
   birthPlace: string;
-  // ✅ 2. LA FUNCIÓN AHORA DEVUELVE UNA PROMESA CON EL TIPO CORRECTO
 }): Promise<SignUpResponse> {
   return request(SIGN_UP_MUTATION, { input });
 }
 
-// Query to fetch the feed of users
+// ---------------------- Queries ----------------------
+
+// Consulta para obtener el feed
 const FEED_QUERY = /* GraphQL */ `
   query Feed {
     feed {
@@ -79,11 +95,14 @@ const FEED_QUERY = /* GraphQL */ `
   }
 `;
 
+/**
+ * Obtiene todos los usuarios disponibles en el feed.
+ */
 export async function getFeed(): Promise<FeedResponse> {
   return request(FEED_QUERY);
 }
 
-// Query to fetch users who have liked the given user
+// Consulta para obtener los usuarios que han dado like al usuario actual
 const LIKERS_QUERY = /* GraphQL */ `
   query Likers($userId: ID!) {
     likers(userId: $userId) {
@@ -100,6 +119,40 @@ const LIKERS_QUERY = /* GraphQL */ `
   }
 `;
 
+/**
+ * Devuelve la lista de usuarios que le han dado like al usuario indicado.
+ *
+ * @param userId Identificador del usuario actual
+ */
 export async function getLikers(userId: string): Promise<LikersResponse> {
   return request(LIKERS_QUERY, { userId });
+}
+
+// Consulta para obtener las coincidencias del usuario
+const MATCHES_QUERY = /* GraphQL */ `
+  query Matches($userId: ID!) {
+    matches(userId: $userId) {
+      id
+      user {
+        id
+        email
+        birthDate
+        birthTime
+        birthPlace
+        photos {
+          url
+          sign
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * Devuelve las coincidencias (matches) del usuario actual.
+ *
+ * @param userId Identificador del usuario autenticado
+ */
+export async function getMatches(userId: string): Promise<MatchesResponse> {
+  return request(MATCHES_QUERY, { userId });
 }

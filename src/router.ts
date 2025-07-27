@@ -4,6 +4,7 @@ import Onboarding from './components/Onboarding.vue';
 import Login from './components/Login.vue';
 import Swipe from './components/Swipe.vue';
 import Likers from './components/Likers.vue';
+import Matches from './components/Matches.vue';
 import Feed from './components/Feed.vue';
 import Chat from './components/Chat.vue';
 import Profile from './components/Profile.vue';
@@ -15,6 +16,8 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/login', component: Login },
   { path: '/swipe', component: Swipe },
   { path: '/likers', component: Likers },
+  // ✅ Nueva ruta para mostrar los matches del usuario
+  { path: '/matches', component: Matches },
   { path: '/feed', component: Feed },
   { path: '/chat/:id', component: Chat, props: true },
   { path: '/profile', component: Profile },
