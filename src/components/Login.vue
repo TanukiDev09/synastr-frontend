@@ -41,13 +41,19 @@
           email: form.email,
           password: form.password,
         });
-        const token = (data as any).login?.token;
+        const loginPayload = (data as any).login;
+        const token = loginPayload?.token;
+        const userId = loginPayload?.user?.id;
         if (token) {
           setAuthToken(token);
-          router.push('/swipe');
-        } else {
+        }
+        if (userId) {
+          localStorage.setItem('userId', userId as string);
+        }
+        if (!token) {
           throw new Error('Token missing');
         }
+        router.push('/swipe');
       } catch (err) {
         error.value = 'Invalid credentials. Please try again.';
         console.error(err);

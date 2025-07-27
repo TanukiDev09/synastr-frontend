@@ -69,10 +69,15 @@
           birthTime: form.birthTime,
           birthPlace: form.birthPlace,
         });
-        // Persist the returned token and navigate to the swipe interface
-        const token = (data as any).signUp?.token;
+        // Persist the returned token and user ID, then navigate to the swipe interface
+        const signUpPayload = (data as any).signUp;
+        const token = signUpPayload?.token;
+        const userId = signUpPayload?.user?.id;
         if (token) {
           setAuthToken(token);
+        }
+        if (userId) {
+          localStorage.setItem('userId', userId as string);
         }
         router.push('/swipe');
       } catch (err) {
