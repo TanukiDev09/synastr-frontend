@@ -29,3 +29,21 @@ export interface LoginInput {
 export async function login(input: LoginInput) {
   return request(LOGIN_MUTATION, { input });
 }
+
+// Mutation to record a like and potentially create a match
+const LIKE_USER_MUTATION = /* GraphQL */ `
+  mutation LikeUser($input: LikeInput!) {
+    likeUser(input: $input) {
+      matched
+    }
+  }
+`;
+
+export interface LikeUserInput {
+  userId: string;
+  targetUserId: string;
+}
+
+export async function likeUser(input: LikeUserInput) {
+  return request(LIKE_USER_MUTATION, { input });
+}
