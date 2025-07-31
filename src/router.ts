@@ -1,7 +1,9 @@
+// src/router.ts
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 
 import Onboarding from './components/Onboarding.vue';
 import Login from './components/Login.vue';
+import UploadPhotos from './components/UploadPhotos.vue'; // ✅ Importa el nuevo componente
 import Swipe from './components/Swipe.vue';
 import Likers from './components/Likers.vue';
 import Matches from './components/Matches.vue';
@@ -14,9 +16,9 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/onboarding' },
   { path: '/onboarding', component: Onboarding },
   { path: '/login', component: Login },
+  { path: '/upload-photos', component: UploadPhotos }, // ✅ Añade la nueva ruta
   { path: '/swipe', component: Swipe },
   { path: '/likers', component: Likers },
-  // ✅ Nueva ruta para mostrar los matches del usuario
   { path: '/matches', component: Matches },
   { path: '/feed', component: Feed },
   { path: '/chat/:id', component: Chat, props: true },
