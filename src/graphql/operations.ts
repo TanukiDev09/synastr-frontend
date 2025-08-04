@@ -3,39 +3,37 @@ import { request } from './client';
 
 // --- Interfaces ---
 
-interface PhotoSuggestion {
-  sign: string;
-  prompt: string;
-}
-
 interface PhotoInput {
   url: string;
   sign: string | null;
 }
 
-// --- Queries ---
-
-const GET_PHOTO_SUGGESTIONS_QUERY = /* GraphQL */ `
-  query GetPhotoSuggestions {
-    photoSuggestions {
-      sign
-      prompt
-    }
-  }
-`;
-
-export async function getPhotoSuggestions(): Promise<PhotoSuggestion[]> {
-  const response = await request<{ photoSuggestions: PhotoSuggestion[] }>(GET_PHOTO_SUGGESTIONS_QUERY);
-  return response.photoSuggestions;
+// Interfaz para las variables que la función 'addPhotos' recibe
+interface AddPhotosVariables {
+  userId: string;
+  photos: PhotoInput[];
 }
 
+// Interfaz para la respuesta que esperamos del servidor
+interface AddPhotosResponse {
+  addPhotos: {
+    id: string;
+    photos: {
+      url: string;
+      sign: string | null;
+    }[];
+  };
+}
 
-// --- Mutations ---
+// --- Mutation ---
 
 const ADD_PHOTOS_MUTATION = /* GraphQL */ `
-  mutation AddPhotos($input: AddPhotosInput!) {
-    addPhotos(input: $input) {
+  # La variable que define el tipo de entrada se llama $inputData
+  mutation AddPhotos($inputData: AddPhotosInput!) {
+    # El nombre de la mutación es 'addPhotos' y su argumento es 'inputData'
+    addPhotos(inputData: $inputData) {
       id
+      email
       photos {
         url
         sign
@@ -44,6 +42,17 @@ const ADD_PHOTOS_MUTATION = /* GraphQL */ `
   }
 `;
 
-export async function addPhotos(input: { userId: string; photos: PhotoInput[] }) {
-  return request(ADD_PHOTOS_MUTATION, { input });
+/**
+ * Función que llama a la mutación 'addPhotos' en el backend.
+ */
+export async function addPhotos(variables: AddPhotosVariables): Promise<AddPhotosResponse> {
+  // El objeto que enviamos como 'inputData' debe contener 'userId' (camelCase),
+  // no 'user_id'.
+  const input = {
+    userId: variables.userId,
+    photos: variables.photos,
+  };
+  
+  // La variable que se envía al backend se llama 'inputData'.
+  return request<AddPhotosResponse>(ADD_PHOTOS_MUTATION, { inputData: input });
 }

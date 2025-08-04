@@ -1,8 +1,8 @@
+// src/graphql/mutations.ts
 import { request } from './client';
 
-// -----------------------------------------------------------------------------
-// Tipos comunes
-// -----------------------------------------------------------------------------
+// --- Interfaces y Tipos Comunes ---
+
 export interface Photo {
   url: string;
   sign?: string | null;
@@ -34,9 +34,8 @@ export interface User {
   natalChart?: NatalChart;
 }
 
-// -----------------------------------------------------------------------------
-// Login Mutation (corregida)
-// -----------------------------------------------------------------------------
+// --- Login Mutation (Corregida) ---
+
 const LOGIN_MUTATION = /* GraphQL */ `
   mutation Login($loginInput: LoginInput!) {
     login(loginInput: $loginInput) {
@@ -83,18 +82,17 @@ export interface LoginInput {
 export interface LoginResponse {
   login: {
     token: string;
-    user: User;
+    user: User; // <-- Ahora la respuesta coincide con la interfaz User completa
   };
 }
 
-export async function login(input: LoginInput) {
+export async function login(input: LoginInput): Promise<LoginResponse> {
   return request<LoginResponse>(LOGIN_MUTATION, { loginInput: input });
 }
 
-// -----------------------------------------------------------------------------
-// SignUp Mutation (ya corregida)
-// -----------------------------------------------------------------------------
-export const SIGN_UP_MUTATION = /* GraphQL */ `
+// --- SignUp Mutation (Corregida) ---
+
+const SIGN_UP_MUTATION = /* GraphQL */ `
   mutation SignUp($signupInput: SignUpInput!) {
     signUp(signupInput: $signupInput) {
       token
@@ -143,27 +141,25 @@ export interface SignUpInput {
 export interface SignUpResponse {
   signUp: {
     token: string;
-    user: User;
+    user: User; // <-- Ahora la respuesta coincide con la interfaz User completa
   };
 }
 
-export async function signUp(input: SignUpInput) {
+export async function signUp(input: SignUpInput): Promise<SignUpResponse> {
   return request<SignUpResponse>(SIGN_UP_MUTATION, { signupInput: input });
 }
 
-// -----------------------------------------------------------------------------
-// Like Mutation
-// -----------------------------------------------------------------------------
+// --- Like User Mutation (Corregida) ---
+
 const LIKE_MUTATION = /* GraphQL */ `
-  mutation Like($input: LikeInput!) {
-    likeUser(input: $input) {
+  mutation Like($inputData: LikeInput!) {
+    likeUser(inputData: $inputData) {
       matched
     }
   }
 `;
 
 export interface LikeInput {
-  userId: string;
   targetUserId: string;
 }
 
@@ -173,55 +169,6 @@ export interface LikeResponse {
   };
 }
 
-export async function likeUser(input: LikeInput) {
-  return request<LikeResponse>(LIKE_MUTATION, { input });
-}
-
-// -----------------------------------------------------------------------------
-// Update Profile Mutation
-// -----------------------------------------------------------------------------
-const UPDATE_PROFILE_MUTATION = /* GraphQL */ `
-  mutation UpdateProfile($input: UpdateProfileInput!) {
-    updateProfile(input: $input) {
-      id
-      email
-      birthDate
-      birthTime
-      birthPlace
-      latitude
-      longitude
-      timezone
-      photos {
-        url
-        sign
-      }
-      natalChart {
-        positions {
-          name
-          sign
-          signIcon
-          degrees
-          house
-        }
-        houses {
-          name
-          sign
-          signIcon
-          degrees
-          house
-        }
-      }
-    }
-  }
-`;
-
-export interface UpdateProfileInput {
-  birthDate?: string;
-  birthTime?: string;
-  birthPlace?: string;
-  photos?: { url: string; sign: string }[];
-}
-
-export async function updateProfile(input: UpdateProfileInput) {
-  return request<{ updateProfile: User }>(UPDATE_PROFILE_MUTATION, { input });
+export async function likeUser(input: LikeInput): Promise<LikeResponse> {
+  return request<LikeResponse>(LIKE_MUTATION, { inputData: input });
 }

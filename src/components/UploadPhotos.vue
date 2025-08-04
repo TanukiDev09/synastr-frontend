@@ -40,8 +40,7 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-// Asumiremos que estas funciones existen y necesitan ser creadas
-import { getPhotoSuggestions, addPhotos } from '../graphql/operations'; 
+import { addPhotos } from '../graphql/operations';
 
 // --- Interfaces y Estado ---
 
@@ -62,40 +61,51 @@ const error = ref<string | null>(null);
 
 // --- Lógica ---
 
-// Función para simular la subida a un servicio como Cloudinary
-// DEBES IMPLEMENTAR ESTA FUNCIÓN CON TU PROPIO SERVICIO
 async function uploadToCloudinary(file: File): Promise<string> {
-  // Aquí va la lógica para subir el archivo a Cloudinary
-  // Por ejemplo, usando FormData y fetch
   console.log(`Subiendo ${file.name} a Cloudinary...`);
-  // Simulación: devolvemos una URL de placeholder
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simular retardo de red
+  await new Promise(resolve => setTimeout(resolve, 1000));
   return `https://placehold.co/600x400/png?text=Uploaded+${file.name}`;
 }
 
-onMounted(async () => {
-  // Inicializamos los espacios para las fotos
+onMounted(() => {
+  // =================================================================
+  // == INICIO: CÓDIGO CORREGIDO DE LOS PROMPTS ==
+  // =================================================================
+  // El campo 'prompt' se mantiene en español para la interfaz de usuario.
+  // El campo 'sign' ahora contiene el valor en INGLÉS que la API espera.
+  const zodiacPrompts = [
+    { sign: 'Aries', prompt: 'Comparte una foto tuya en plena acción o viviendo una aventura.' },
+    { sign: 'Taurus', prompt: 'Sube una foto en tu lugar favorito para relajarte o disfrutar de un buen momento.' },
+    { sign: 'Gemini', prompt: 'Una foto de un momento divertido con amigos o haciendo algo que despierte tu curiosidad.' },
+    { sign: 'Cancer', prompt: 'Muestra tu lado más tierno: una foto con tu mascota, tu familia o en tu rincón favorito de casa.' },
+    { sign: 'Leo', prompt: 'Una foto donde te sientas protagonista y con total confianza.' },
+    { sign: 'Virgo', prompt: 'Comparte una foto que muestre tu lado organizado, tu lugar de trabajo o un hobby que te apasione.' },
+    { sign: 'Libra', prompt: 'Sube tu foto más elegante o una donde luzcas tu mejor atuendo.' },
+    { sign: 'Scorpio', prompt: 'Una foto que muestre tu mirada más intensa o un lado misterioso de ti.' },
+    { sign: 'Sagittarius', prompt: 'Comparte tu mejor foto de un viaje o explorando un lugar nuevo.' },
+    { sign: 'Capricorn', prompt: 'Una foto que represente un logro profesional o una meta de la que te sientas orgulloso.' },
+    { sign: 'Aquarius', prompt: 'Muestra tu lado más original: una foto con un look atrevido, con tu grupo de amigos o defendiendo una causa que te importa.' },
+    { sign: 'Pisces', prompt: 'Una foto artística, soñadora o en un lugar que te conecte con tus emociones.' }
+  ];
+  // =================================================================
+  // == FIN: CÓDIGO CORREGIDO DE LOS PROMPTS ==
+  // =================================================================
+
   const slots: PhotoSlot[] = [
-    { prompt: 'Foto de perfil', sign: null, file: null, previewUrl: null, isProfile: true },
+    { prompt: 'Foto de perfil (rostro)', sign: null, file: null, previewUrl: null, isProfile: true },
   ];
 
-  try {
-    // Obtenemos las sugerencias desde nuestro backend
-    const suggestions = await getPhotoSuggestions();
-    suggestions.forEach(s => {
-      slots.push({
-        prompt: s.prompt,
-        sign: s.sign,
-        file: null,
-        previewUrl: null,
-        isProfile: false,
-      });
+  zodiacPrompts.forEach(p => {
+    slots.push({
+      prompt: p.prompt,
+      sign: p.sign, // Ahora 'p.sign' ya tiene el valor correcto en inglés
+      file: null,
+      previewUrl: null,
+      isProfile: false,
     });
-    photoSlots.value = slots;
-  } catch (err) {
-    error.value = "No se pudieron cargar las sugerencias de fotos.";
-    console.error(err);
-  }
+  });
+
+  photoSlots.value = slots;
 });
 
 function triggerFileInput(index: number) {
@@ -123,6 +133,12 @@ async function handleSubmit() {
     isUploading.value = false;
     return;
   }
+  
+  if (!photoSlots.value[0].file) {
+    error.value = "La foto de perfil (rostro) es obligatoria.";
+    isUploading.value = false;
+    return;
+  }
 
   try {
     const photosToUpload = photoSlots.value.filter(slot => slot.file);
@@ -132,7 +148,8 @@ async function handleSubmit() {
       const url = await uploadToCloudinary(slot.file!);
       uploadedPhotos.push({
         url: url,
-        sign: slot.sign, // Se envía el signo asociado (o null para la de perfil)
+        // Ya no se necesita el mapa de traducción. 'slot.sign' ya es correcto.
+        sign: slot.sign,
       });
     }
 
@@ -143,7 +160,7 @@ async function handleSubmit() {
       });
     }
     
-    router.push('/swipe'); // Navegar a la siguiente pantalla
+    router.push('/swipe');
   } catch (err) {
     error.value = "Ocurrió un error al subir las fotos.";
     console.error(err);
@@ -187,7 +204,7 @@ async function handleSubmit() {
 .photo-slot--profile {
   border-color: #6c63ff;
   border-style: solid;
-  grid-column: span 2; /* Hacer que el perfil ocupe más espacio */
+  grid-column: span 2;
   grid-row: span 2;
 }
 .photo-placeholder {
