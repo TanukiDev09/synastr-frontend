@@ -1,4 +1,5 @@
-import { request } from './client';
+// src/graphql/queries.ts
+import { request } from "./client";
 
 // -----------------------------------------------------------------------------
 // Tipos usados en respuestas de queries
@@ -14,7 +15,12 @@ export interface User {
   birthDate: string;
   birthTime: string;
   birthPlace: string;
+  // Añadimos los campos que faltaban para que coincida con el backend
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
   photos: Photo[];
+  natalChart?: any; // Usamos 'any' por simplicidad, se puede detallar más si es necesario
 }
 
 export interface CurrentUserResponse {
@@ -81,7 +87,7 @@ export async function getCompatibility(userId: string) {
 }
 
 // -----------------------------------------------------------------------------
-// Query: Feed de perfiles para swipe
+// Query: Feed de perfiles para swipe (Corregida)
 // -----------------------------------------------------------------------------
 export const FEED_QUERY = /* GraphQL */ `
   query Feed {
@@ -91,9 +97,22 @@ export const FEED_QUERY = /* GraphQL */ `
       birthDate
       birthTime
       birthPlace
+      latitude
+      longitude
+      timezone
       photos {
         url
         sign
+      }
+      natalChart {
+        positions {
+          name
+          sign
+        }
+        houses {
+          name
+          sign
+        }
       }
     }
   }
