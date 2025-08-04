@@ -8,15 +8,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@astrodraw/astrochart": "^3.0.2",
+    "graphql-request": "^6.1.0",
     "vue": "^3.4.21",
-    "vue-router": "^4.2.5",
-    "graphql-request": "^6.1.0"
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.5.0",
-    "typescript": "^5.2.2",
-    "vite": "^4.4.9",
     "@types/node": "^20.5.1",
-    "sass": "^1.66.1"
+    "@vitejs/plugin-vue": "^4.5.0",
+    "sass": "^1.66.1",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.14"
   }
 }

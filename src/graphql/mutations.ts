@@ -1,12 +1,45 @@
 import { request } from './client';
 
 // -----------------------------------------------------------------------------
-// Login mutation
-//
-// Authenticates an existing user and returns a token and basic user info.
+// Tipos comunes
+// -----------------------------------------------------------------------------
+export interface Photo {
+  url: string;
+  sign?: string | null;
+}
+
+export interface NatalPosition {
+  name: string;
+  sign: string;
+  signIcon: string;
+  degrees: number;
+  house: number;
+}
+
+export interface NatalChart {
+  positions: NatalPosition[];
+  houses: NatalPosition[];
+}
+
+export interface User {
+  id: string;
+  email: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  photos: Photo[];
+  natalChart?: NatalChart;
+}
+
+// -----------------------------------------------------------------------------
+// Login Mutation (corregida)
+// -----------------------------------------------------------------------------
 const LOGIN_MUTATION = /* GraphQL */ `
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
+  mutation Login($loginInput: LoginInput!) {
+    login(loginInput: $loginInput) {
       token
       user {
         id
@@ -14,9 +47,28 @@ const LOGIN_MUTATION = /* GraphQL */ `
         birthDate
         birthTime
         birthPlace
+        latitude
+        longitude
+        timezone
         photos {
           url
           sign
+        }
+        natalChart {
+          positions {
+            name
+            sign
+            signIcon
+            degrees
+            house
+          }
+          houses {
+            name
+            sign
+            signIcon
+            degrees
+            house
+          }
         }
       }
     }
@@ -28,74 +80,148 @@ export interface LoginInput {
   password: string;
 }
 
-/**
- * Executes the `login` mutation. Takes an object containing the user's
- * email and password and returns a promise with the GraphQL response.
- */
+export interface LoginResponse {
+  login: {
+    token: string;
+    user: User;
+  };
+}
+
 export async function login(input: LoginInput) {
-  return request(LOGIN_MUTATION, { input });
+  return request<LoginResponse>(LOGIN_MUTATION, { loginInput: input });
 }
 
 // -----------------------------------------------------------------------------
-// Like mutation
-//
-// Records a like and potentially creates a match. Returns whether a match was
-// created.
-const LIKE_USER_MUTATION = /* GraphQL */ `
-  mutation LikeUser($input: LikeInput!) {
+// SignUp Mutation (ya corregida)
+// -----------------------------------------------------------------------------
+export const SIGN_UP_MUTATION = /* GraphQL */ `
+  mutation SignUp($signupInput: SignUpInput!) {
+    signUp(signupInput: $signupInput) {
+      token
+      user {
+        id
+        email
+        birthDate
+        birthTime
+        birthPlace
+        latitude
+        longitude
+        timezone
+        photos {
+          url
+          sign
+        }
+        natalChart {
+          positions {
+            name
+            sign
+            signIcon
+            degrees
+            house
+          }
+          houses {
+            name
+            sign
+            signIcon
+            degrees
+            house
+          }
+        }
+      }
+    }
+  }
+`;
+
+export interface SignUpInput {
+  email: string;
+  password: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+}
+
+export interface SignUpResponse {
+  signUp: {
+    token: string;
+    user: User;
+  };
+}
+
+export async function signUp(input: SignUpInput) {
+  return request<SignUpResponse>(SIGN_UP_MUTATION, { signupInput: input });
+}
+
+// -----------------------------------------------------------------------------
+// Like Mutation
+// -----------------------------------------------------------------------------
+const LIKE_MUTATION = /* GraphQL */ `
+  mutation Like($input: LikeInput!) {
     likeUser(input: $input) {
       matched
     }
   }
 `;
 
-export interface LikeUserInput {
+export interface LikeInput {
   userId: string;
   targetUserId: string;
 }
 
-export async function likeUser(input: LikeUserInput) {
-  return request(LIKE_USER_MUTATION, { input });
+export interface LikeResponse {
+  likeUser: {
+    matched: boolean;
+  };
+}
+
+export async function likeUser(input: LikeInput) {
+  return request<LikeResponse>(LIKE_MUTATION, { input });
 }
 
 // -----------------------------------------------------------------------------
-// Add photos mutation
-//
-// Appends one or more photos (with optional zodiac signs) to the specified
-// user's profile. Returns the updated user.
-const ADD_PHOTOS_MUTATION = /* GraphQL */ `
-  mutation AddPhotos($input: AddPhotosInput!) {
-    addPhotos(input: $input) {
+// Update Profile Mutation
+// -----------------------------------------------------------------------------
+const UPDATE_PROFILE_MUTATION = /* GraphQL */ `
+  mutation UpdateProfile($input: UpdateProfileInput!) {
+    updateProfile(input: $input) {
       id
       email
       birthDate
       birthTime
       birthPlace
+      latitude
+      longitude
+      timezone
       photos {
         url
         sign
+      }
+      natalChart {
+        positions {
+          name
+          sign
+          signIcon
+          degrees
+          house
+        }
+        houses {
+          name
+          sign
+          signIcon
+          degrees
+          house
+        }
       }
     }
   }
 `;
 
-export interface PhotoInput {
-  url: string;
-  sign: string | null;
+export interface UpdateProfileInput {
+  birthDate?: string;
+  birthTime?: string;
+  birthPlace?: string;
+  photos?: { url: string; sign: string }[];
 }
 
-/**
- * Calls the `addPhotos` mutation on the GraphQL API. Accepts the user ID and
- * an array of photos to upload. Each photo includes a Data URL and an
- * optional zodiac sign. Returns the updated user.
- *
- * @param userId The ID of the user to update
- * @param photos A list of photo objects to append
- */
-export async function addPhotos(userId: string, photos: PhotoInput[]) {
-  const input = {
-    userId,
-    photos,
-  };
-  return request(ADD_PHOTOS_MUTATION, { input });
+export async function updateProfile(input: UpdateProfileInput) {
+  return request<{ updateProfile: User }>(UPDATE_PROFILE_MUTATION, { input });
 }
