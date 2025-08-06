@@ -1,135 +1,165 @@
 <template>
-  <div class="swipe">
-    <h1>Explora perfiles</h1>
+  <div class="swipe-container">
+    <div v-if="loading" class="feedback-message">
+      <p>Loading profiles...</p>
+    </div>
 
-    <div v-if="loading" class="loading">Cargando perfiles...</div>
-    <div v-else-if="profiles.length">
-      <div v-for="(profile, index) in profiles" :key="profile.id" v-show="index === currentIndex" class="profile-card">
-        <img v-if="profile.photos && profile.photos.length" :src="profile.photos[0].url" alt="Foto de perfil" class="profile-photo" />
-        <h2>{{ profile.email }}</h2>
-        <p><strong>Fecha de nacimiento:</strong> {{ profile.birthDate }}</p>
-        <p><strong>Hora de nacimiento:</strong> {{ profile.birthTime }}</p>
-        <p><strong>Lugar de nacimiento:</strong> {{ profile.birthPlace }}</p>
-
-        <div class="actions">
-          <button @click="passProfile">👎 Pasar</button>
-          <button @click="likeProfile(profile.id)">❤️ Me gusta</button>
+    <div v-else-if="currentProfile" class="profile-card-wrapper">
+      <div class="profile-card">
+        <img v-if="currentProfile.photos.length" :src="currentProfile.photos[0].url" alt="Profile Photo" />
+        <div class="profile-info">
+          <h2>{{ currentProfile.email }}</h2>
+          <div v-if="currentProfile.natalChart" class="natal-info">
+            <p><strong>Sun:</strong> {{ getSignFor('Sun', currentProfile) }}</p>
+            <p><strong>Moon:</strong> {{ getSignFor('Moon', currentProfile) }}</p>
+            <p><strong>Rising:</strong> {{ getSignFor('Ascendant', currentProfile) }}</p>
+          </div>
+          <p><strong>Birth Date:</strong> {{ currentProfile.birthDate }}</p>
+          <p><strong>Gender:</strong> {{ currentProfile.gender || "Not specified" }}</p>
+          <p><strong>Looking For:</strong> {{ currentProfile.lookingFor || "Not specified" }}</p>
         </div>
       </div>
+      <div class="actions">
+        <button @click="like(currentProfile.id)">Like</button>
+        <button @click="skip">Skip</button>
+      </div>
     </div>
-    <div v-else class="no-profiles">
-      <p>No hay más perfiles disponibles.</p>
+    
+    <div v-else class="feedback-message">
+      <p>No more profiles to show.</p>
     </div>
+
+    <p v-if="error" class="error-message">{{ error }}</p>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
-import { getFeed } from '../graphql/queries';
-import { likeUser } from '../graphql/mutations';
-import type { User } from '../graphql/queries';
+<script setup lang="ts">
+import { ref, onMounted, computed } from "vue";
+import { request } from "../graphql/client";
+import { LIKE_USER_MUTATION } from "../graphql/mutations";
+import { FEED_QUERY, type User } from "../graphql/queries";
 
-export default defineComponent({
-  name: 'Swipe',
-  setup() {
-    const profiles = ref<User[]>([]);
-    const currentIndex = ref(0);
-    const loading = ref(true);
+const profiles = ref<User[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
-    const fetchProfiles = async () => {
-      try {
-        const response = await getFeed();
-        profiles.value = response.feed;
-      } catch (error) {
-        console.error('Error al cargar perfiles:', error);
-      } finally {
-        loading.value = false;
-      }
-    };
+const currentProfile = computed(() => profiles.value.length > 0 ? profiles.value[0] : null);
 
-    const likeProfile = async (userId: string) => {
-      try {
-        await likeUser({ userId });
-        nextProfile();
-      } catch (error) {
-        console.error('Error al dar like:', error);
-      }
-    };
-
-    const passProfile = () => {
-      nextProfile();
-    };
-
-    const nextProfile = () => {
-      if (currentIndex.value < profiles.value.length - 1) {
-        currentIndex.value++;
-      } else {
-        profiles.value = [];
-      }
-    };
-
-    onMounted(() => {
-      fetchProfiles();
-    });
-
-    return {
-      profiles,
-      currentIndex,
-      loading,
-      likeProfile,
-      passProfile
-    };
+const fetchProfiles = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const data = await request<{ feed: User[] }>(FEED_QUERY);
+    profiles.value = data.feed;
+  } catch (err) {
+    console.error("Error fetching profiles:", err);
+    error.value = "Failed to load profiles.";
+  } finally {
+    loading.value = false;
   }
-});
+};
+
+const like = async (userId: string) => {
+  try {
+    await request(LIKE_USER_MUTATION, { targetUserId: userId });
+    profiles.value.shift(); 
+  } catch (err) {
+    console.error("Error liking user:", err);
+    error.value = "An error occurred while liking the profile.";
+  }
+};
+
+const skip = () => {
+  if (profiles.value.length > 0) {
+    profiles.value.shift();
+  }
+};
+
+// CORRECCIÓN: Función auxiliar para encontrar el signo de un planeta.
+const getSignFor = (planetName: string, profile: User): string => {
+  if (!profile.natalChart?.positions) {
+    return 'N/A';
+  }
+  const position = profile.natalChart.positions.find(p => p.name === planetName);
+  return position ? position.sign : 'N/A';
+};
+
+onMounted(fetchProfiles);
 </script>
 
 <style scoped>
-.swipe {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
+.swipe-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  padding: 20px;
+  background-color: #f7f7f7;
 }
-
+.profile-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
 .profile-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 2rem;
-  background: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.profile-photo {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 12px;
+  max-width: 400px;
   width: 100%;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
+.profile-card img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.profile-info {
+  margin-top: 10px;
+  text-align: left;
+}
+.natal-info {
+  background-color: #f0f8ff;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
 .actions {
   display: flex;
   justify-content: space-around;
-  margin-top: 1rem;
+  width: 100%;
+  max-width: 400px;
 }
-
-.actions button {
-  font-size: 1.2rem;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
+button {
+  padding: 12px 24px;
   border: none;
-  border-radius: 4px;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
-
-.actions button:first-child {
-  background: #f5f5f5;
+button:hover {
+  transform: scale(1.05);
 }
-
-.actions button:last-child {
-  background: #ff4d6d;
+button:first-of-type {
+  background-color: #4caf50;
   color: white;
 }
-
-.loading,
-.no-profiles {
-  margin-top: 2rem;
+button:last-of-type {
+  background-color: #f44336;
+  color: white;
+}
+.feedback-message {
+  color: #555;
+  font-size: 1.2rem;
+}
+.error-message {
+  color: red;
+  margin-top: 1rem;
 }
 </style>

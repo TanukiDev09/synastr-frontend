@@ -1,84 +1,75 @@
 <template>
-  <div class="matches">
-    <h2>Tus matches</h2>
-    <div v-if="loading">Cargando...</div>
-    <ul v-else-if="matches.length">
-      <li v-for="m in matches" :key="m.id" class="match-item">
-        <!-- Enlaza al chat usando el ID de la coincidencia; se usará en el módulo de chat -->
-        <router-link :to="`/chat/${m.id}`">
-          <strong>{{ m.user.email }}</strong> — nacido en {{ m.user.birthPlace }}
-        </router-link>
-      </li>
-    </ul>
-    <p v-else>Aún no tienes matches.</p>
+  <div class="matches-container">
+    <h1>Your Matches</h1>
+    <div v-if="matches.length" class="match-card" v-for="match in matches" :key="match.id">
+      <img v-if="match.photos.length" :src="match.photos[0]" alt="Profile Photo" />
+      <div class="match-info">
+        <h2>{{ match.email }}</h2>
+        <p><strong>Gender:</strong> {{ match.gender || "Not specified" }}</p>
+        <p><strong>Looking For:</strong> {{ match.lookingFor || "Not specified" }}</p>
+
+        <!-- Datos extra de user_info -->
+        <div v-if="match.user_info" class="extra-info">
+          <p v-if="match.user_info.pets"><strong>Pets:</strong> {{ match.user_info.pets }}</p>
+          <p v-if="match.user_info.languages?.length">
+            <strong>Languages:</strong> {{ match.user_info.languages.join(", ") }}
+          </p>
+          <p v-if="match.user_info.interests?.length">
+            <strong>Interests:</strong> {{ match.user_info.interests.join(", ") }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <p v-else>No matches yet.</p>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import { getMatches } from '../graphql/queries';
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { graphqlClient } from "../graphql/client";
+import { GET_MATCHES_QUERY, User } from "../graphql/queries";
 
-// Define las interfaces de datos que se utilizan en esta vista. Estas podrían
-// colocarse en un archivo de tipos compartido si crecen en número.
-interface Photo {
-  url: string;
-  sign?: string;
-}
-interface User {
-  id: string;
-  email: string;
-  birthDate: string;
-  birthTime: string;
-  birthPlace: string;
-  photos: Photo[];
-}
-interface Match {
-  id: string;
-  user: User;
-}
+const matches = ref<User[]>([]);
 
-const matches = ref<Match[]>([]);
-const loading = ref<boolean>(true);
-
-onMounted(async () => {
-  const userId = localStorage.getItem('userId');
-  if (!userId) {
-    loading.value = false;
-    return;
-  }
+const fetchMatches = async () => {
   try {
-    const data = await getMatches(userId);
-    matches.value = data.matches;
-  } catch (err) {
-    console.error('Failed to load matches', err);
-  } finally {
-    loading.value = false;
+    const { matches: matchList } = await graphqlClient.request<{ matches: User[] }>(GET_MATCHES_QUERY);
+    matches.value = matchList;
+  } catch (error) {
+    console.error("Error fetching matches:", error);
   }
-});
+};
+
+onMounted(fetchMatches);
 </script>
 
 <style scoped>
-.matches {
-  max-width: 480px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background: #fff;
+.matches-container {
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+}
+.match-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  margin-bottom: 15px;
 }
-.matches h2 {
-  margin-bottom: 1rem;
-  text-align: center;
+.match-card img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
 }
-.match-item {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+.match-info h2 {
+  margin: 0;
+  font-size: 1.1em;
 }
-.match-item:last-child {
-  border-bottom: none;
-}
-.match-item a {
-  text-decoration: none;
-  color: inherit;
+.extra-info {
+  margin-top: 8px;
+  font-size: 0.95em;
 }
 </style>
