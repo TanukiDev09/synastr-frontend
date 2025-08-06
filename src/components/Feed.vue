@@ -1,55 +1,88 @@
 <template>
-  <div class="feed">
-    <h2>Personas sugeridas</h2>
-    <div v-if="loading">Cargando...</div>
-    <div v-else>
-      <div
-        v-for="user in users"
-        :key="user.id"
-        class="feed__card"
-      >
-        <img
-          v-if="user.photos.length"
-          :src="user.photos[0].url"
-          alt="foto de perfil"
-          class="feed__photo"
-        />
-        <div class="feed__info">
-          <p>{{ user.email }}</p>
-          <p>Nacido en {{ user.birthPlace }}</p>
-        </div>
+  <div class="feed-container">
+    <h1>User Feed</h1>
+    <div v-if="loading">Loading users...</div>
+    <div v-else-if="error" class="error-message">{{ error }}</div>
+    <div v-else-if="users.length === 0">No users to display.</div>
+
+    <div v-else class="user-list">
+      <div class="user-card" v-for="user in users" :key="user.id">
+        <img v-if="user.photos.length" :src="user.photos[0]" alt="User Photo" class="user-photo" />
+        <h2>{{ user.email }}</h2>
+        <p><strong>Gender:</strong> {{ user.gender || "Not specified" }}</p>
+        <p v-if="user.sexual_orientation?.length">
+          <strong>Orientation:</strong> {{ user.sexual_orientation.join(", ") }}
+        </p>
+        <p v-if="user.user_info?.languages?.length">
+          <strong>Languages:</strong> {{ user.user_info.languages.join(", ") }}
+        </p>
+        <p v-if="user.user_info?.interests?.length">
+          <strong>Interests:</strong> {{ user.user_info.interests.join(", ") }}
+        </p>
+        <p v-if="user.user_info?.pets"><strong>Pets:</strong> {{ user.user_info.pets }}</p>
+        <p v-if="user.user_info?.drinking"><strong>Drinking:</strong> {{ user.user_info.drinking }}</p>
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { onMounted, ref } from 'vue';
-import { getFeed } from '../graphql/queries';
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { graphqlClient } from "../graphql/client";
+import { gql } from "graphql-request";
 
-interface Photo {
-  url: string;
-  sign?: string;
+// Tipo de respuesta esperado de la query
+interface UserInfo {
+  languages?: string[];
+  interests?: string[];
+  pets?: string;
+  drinking?: string;
 }
 
-interface User {
+interface FeedUser {
   id: string;
   email: string;
-  birthDate: string;
-  birthTime: string;
-  birthPlace: string;
-  photos: Photo[];
+  gender?: string;
+  sexual_orientation?: string[];
+  photos: string[];
+  user_info?: UserInfo;
 }
 
-const users = ref<User[]>([]);
-const loading = ref<boolean>(true);
+interface GetFeedResponse {
+  getFeed: FeedUser[];
+}
+
+// Query para obtener los usuarios del feed
+const FETCH_USERS = gql`
+  query GetFeed {
+    getFeed {
+      id
+      email
+      gender
+      sexual_orientation
+      photos
+      user_info {
+        languages
+        interests
+        pets
+        drinking
+      }
+    }
+  }
+`;
+
+const loading = ref(false);
+const error = ref<string | null>(null);
+const users = ref<FeedUser[]>([]);
 
 onMounted(async () => {
+  loading.value = true;
   try {
-    const data = await getFeed();
-    users.value = data.feed as User[];
+    const data = await graphqlClient.request<GetFeedResponse>(FETCH_USERS);
+    users.value = data.getFeed;
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching feed:", err);
+    error.value = "Failed to load user feed.";
   } finally {
     loading.value = false;
   }
@@ -57,31 +90,29 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.feed {
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 1rem;
+.feed-container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
 }
-
-.feed__card {
+.user-list {
   display: flex;
-  background: #fff;
+  flex-direction: column;
+  gap: 20px;
+}
+.user-card {
+  border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  margin-bottom: 1rem;
-  align-items: center;
+  padding: 16px;
 }
-
-.feed__photo {
-  width: 72px;
-  height: 72px;
+.user-photo {
+  width: 100%;
+  max-height: 200px;
   object-fit: cover;
-  border-radius: 50%;
-  margin-right: 1rem;
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
-
-.feed__info p {
-  margin: 0;
+.error-message {
+  color: red;
 }
 </style>

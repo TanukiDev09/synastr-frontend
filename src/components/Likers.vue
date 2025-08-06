@@ -1,70 +1,75 @@
 <template>
-  <div class="likers">
-    <h2>Personas que te han dado like</h2>
-    <div v-if="loading">Cargando...</div>
-    <ul v-else-if="likers.length">
-      <li v-for="u in likers" :key="u.id" class="liker-item">
-        <strong>{{ u.email }}</strong> — nacido en {{ u.birthPlace }}
-      </li>
-    </ul>
-    <p v-else>No tienes likes todavía.</p>
+  <div class="likers-container">
+    <h1>People Who Liked You</h1>
+    <div v-if="likers.length" class="liker-card" v-for="liker in likers" :key="liker.id">
+      <img v-if="liker.photos.length" :src="liker.photos[0]" alt="Profile Photo" />
+      <div class="liker-info">
+        <h2>{{ liker.email }}</h2>
+        <p><strong>Gender:</strong> {{ liker.gender || "Not specified" }}</p>
+        <p><strong>Looking For:</strong> {{ liker.lookingFor || "Not specified" }}</p>
+
+        <!-- Datos extra de user_info -->
+        <div v-if="liker.user_info" class="extra-info">
+          <p v-if="liker.user_info.pets"><strong>Pets:</strong> {{ liker.user_info.pets }}</p>
+          <p v-if="liker.user_info.languages?.length">
+            <strong>Languages:</strong> {{ liker.user_info.languages.join(", ") }}
+          </p>
+          <p v-if="liker.user_info.interests?.length">
+            <strong>Interests:</strong> {{ liker.user_info.interests.join(", ") }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <p v-else>No likes yet.</p>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import { getLikers } from '../graphql/queries';
-
-// Esta interfaz se podría mover a un archivo central de tipos
-interface User {
-  id: string;
-  email: string;
-  birthDate: string;
-  birthTime: string;
-  birthPlace: string;
-  photos: { url: string; sign?: string }[];
-}
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { graphqlClient } from "../graphql/client";
+import { GET_LIKERS_QUERY, User } from "../graphql/queries";
 
 const likers = ref<User[]>([]);
-const loading = ref<boolean>(true);
 
-onMounted(async () => {
-  const userId = localStorage.getItem('userId');
-  if (!userId) {
-    loading.value = false;
-    return;
-  }
+const fetchLikers = async () => {
   try {
-    // ✅ 3. AHORA 'data' TIENE EL TIPO CORRECTO: LikersResponse
-    // Ya no es 'unknown' y podemos acceder a 'data.likers' de forma segura.
-    const data = await getLikers(userId);
-    likers.value = data.likers;
-  } catch (err) {
-    console.error('Failed to load likers', err);
-  } finally {
-    loading.value = false;
+    const { likers: likerList } = await graphqlClient.request<{ likers: User[] }>(GET_LIKERS_QUERY);
+    likers.value = likerList;
+  } catch (error) {
+    console.error("Error fetching likers:", error);
   }
-});
+};
+
+onMounted(fetchLikers);
 </script>
 
 <style scoped>
-.likers {
-  max-width: 480px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background: #fff;
+.likers-container {
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+}
+.liker-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  margin-bottom: 15px;
 }
-.likers h2 {
-  margin-bottom: 1rem;
-  text-align: center;
+.liker-card img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
 }
-.liker-item {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+.liker-info h2 {
+  margin: 0;
+  font-size: 1.1em;
 }
-.liker-item:last-child {
-  border-bottom: none;
+.extra-info {
+  margin-top: 8px;
+  font-size: 0.95em;
 }
 </style>

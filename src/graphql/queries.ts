@@ -1,12 +1,30 @@
-// src/graphql/queries.ts
-import { request } from "./client";
+import { gql } from "graphql-request";
 
-// -----------------------------------------------------------------------------
-// Tipos usados en respuestas de queries
-// -----------------------------------------------------------------------------
-export interface Photo {
-  url: string;
-  sign?: string | null;
+export interface UserInfo {
+  height?: number;
+  weight?: number;
+  school?: string;
+  education?: string;
+  children?: string;
+  communicationStyle?: string;
+  pets?: string;
+  drinking?: string;
+  smoking?: string;
+  fitness?: string;
+  dietary?: string;
+  sleeping?: string;
+  politics?: string;
+  spirituality?: string;
+  languages?: string[];
+  interests?: string[];
+}
+
+export interface AstrologicalPosition {
+  name: string;
+  sign: string;
+  signIcon: string;
+  degrees: number;
+  house: number;
 }
 
 export interface User {
@@ -15,95 +33,43 @@ export interface User {
   birthDate: string;
   birthTime: string;
   birthPlace: string;
-  // Añadimos los campos que faltaban para que coincida con el backend
+  gender?: string;
+  lookingFor?: string;
   latitude?: number;
   longitude?: number;
   timezone?: string;
-  photos: Photo[];
-  natalChart?: any; // Usamos 'any' por simplicidad, se puede detallar más si es necesario
+  userInfo?: UserInfo;
+  photos: {
+    url: string;
+    sign: string;
+  }[];
+  sexualOrientation?: string[];
+  // CORRECCIÓN: Se define la estructura correcta de la carta natal.
+  natalChart?: {
+    positions: AstrologicalPosition[];
+    houses: AstrologicalPosition[];
+  };
 }
 
-export interface CurrentUserResponse {
-  currentUser: User;
-}
-
-export interface FeedResponse {
-  feed: User[];
-}
-
-export interface Match {
-  id: string;
-  email: string;
-  birthDate: string;
-  birthTime: string;
-  birthPlace: string;
-  photos: Photo[];
-}
-
-export interface MatchesResponse {
-  matches: Match[];
-}
-
-// -----------------------------------------------------------------------------
-// Query: Obtener usuario actual
-// -----------------------------------------------------------------------------
-export const GET_CURRENT_USER_QUERY = /* GraphQL */ `
+export const GET_CURRENT_USER_QUERY = gql`
   query GetCurrentUser {
-    currentUser {
+    getCurrentUser {
       id
       email
       birthDate
       birthTime
       birthPlace
-      photos {
-        url
-        sign
-      }
-    }
-  }
-`;
-
-export async function getCurrentUser() {
-  return request<CurrentUserResponse>(GET_CURRENT_USER_QUERY);
-}
-
-// -----------------------------------------------------------------------------
-// Query: Compatibilidad astrológica
-// -----------------------------------------------------------------------------
-export const COMPATIBILITY_QUERY = /* GraphQL */ `
-  query Compatibility($userId: ID!) {
-    compatibility(userId: $userId) {
-      score
-      details {
-        aspect
-        description
-      }
-    }
-  }
-`;
-
-export async function getCompatibility(userId: string) {
-  return request(COMPATIBILITY_QUERY, { userId });
-}
-
-// -----------------------------------------------------------------------------
-// Query: Feed de perfiles para swipe (Corregida)
-// -----------------------------------------------------------------------------
-export const FEED_QUERY = /* GraphQL */ `
-  query Feed {
-    feed {
-      id
-      email
-      birthDate
-      birthTime
-      birthPlace
+      gender
+      lookingFor
       latitude
       longitude
       timezone
+      sexualOrientation
       photos {
         url
         sign
       }
+      # CORRECCIÓN: Se piden los campos correctos de la carta natal.
       natalChart {
         positions {
           name
@@ -114,18 +80,80 @@ export const FEED_QUERY = /* GraphQL */ `
           sign
         }
       }
+      userInfo {
+        height
+        weight
+        school
+        education
+        children
+        communicationStyle
+        pets
+        drinking
+        smoking
+        fitness
+        dietary
+        sleeping
+        politics
+        spirituality
+        languages
+        interests
+      }
     }
   }
 `;
 
-export async function getFeed() {
-  return request<FeedResponse>(FEED_QUERY);
-}
+export const FEED_QUERY = gql`
+  query Feed {
+    feed {
+      id
+      email
+      birthDate
+      birthTime
+      birthPlace
+      gender
+      lookingFor
+      photos {
+        url
+        sign
+      }
+      sexualOrientation
+      latitude
+      longitude
+      timezone
+      # CORRECCIÓN: Se piden los campos correctos de la carta natal.
+      natalChart {
+        positions {
+          name
+          sign
+        }
+        houses {
+          name
+          sign
+        }
+      }
+      userInfo {
+        height
+        weight
+        school
+        education
+        children
+        communicationStyle
+        pets
+        drinking
+        smoking
+        fitness
+        dietary
+        sleeping
+        politics
+        spirituality
+        languages
+        interests
+      }
+    }
+  }
+`;
 
-// -----------------------------------------------------------------------------
-// Query: Lista de matches del usuario actual
-// -----------------------------------------------------------------------------
-export const MATCHES_QUERY = /* GraphQL */ `
+export const GET_MATCHES_QUERY = gql`
   query Matches {
     matches {
       id
@@ -133,22 +161,18 @@ export const MATCHES_QUERY = /* GraphQL */ `
       birthDate
       birthTime
       birthPlace
+      gender
+      lookingFor
       photos {
         url
         sign
       }
+      sexualOrientation
     }
   }
 `;
 
-export async function getMatches() {
-  return request<MatchesResponse>(MATCHES_QUERY);
-}
-
-// -----------------------------------------------------------------------------
-// Query: Likers (usuarios que dieron "like")
-// -----------------------------------------------------------------------------
-export const LIKERS_QUERY = /* GraphQL */ `
+export const GET_LIKERS_QUERY = gql`
   query Likers {
     likers {
       id
@@ -156,14 +180,13 @@ export const LIKERS_QUERY = /* GraphQL */ `
       birthDate
       birthTime
       birthPlace
+      gender
+      lookingFor
       photos {
         url
         sign
       }
+      sexualOrientation
     }
   }
 `;
-
-export async function getLikers() {
-  return request(LIKERS_QUERY);
-}
