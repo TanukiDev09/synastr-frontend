@@ -332,7 +332,27 @@ Planned:
 
 ## 🚀 Deployment
 
-### Production Build
+### Vercel (Configured)
+
+**Deploy Strategy**: Only `main` branch deploys to production
+
+```bash
+# Configuration files
+vercel.json          # Main Vercel config
+vercel-ignore.sh     # Build decision script
+.vercelignore        # Excluded files
+
+# Behavior
+✅ Merges to main    → Auto-deploy to production
+❌ Feature branches  → Ignored (no deploy)
+❌ PR branches       → Ignored (no deploy)
+```
+
+**Why**: Reduces unnecessary deploys and build minutes on Vercel.
+
+See [PROJECT.md §11.5](./PROJECT.md) for configuration details.
+
+### Production Build (Local)
 ```bash
 npm run build
 # Output: dist/
@@ -345,6 +365,7 @@ docker run -p 80:80 synastr-frontend
 ```
 
 ### Deployment Checklist
+- [x] Configure Vercel to deploy only from `main`
 - [ ] Update `VITE_GRAPHQL_ENDPOINT` in `.env`
 - [ ] Implement real Cloudinary upload
 - [ ] Add route guards for authentication

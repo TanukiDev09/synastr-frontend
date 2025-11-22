@@ -13,16 +13,23 @@
 ## TABLE OF CONTENTS (Jump to Section)
 
 ```
-§1  PROJECT_IDENTITY    - What/Why/Who [100 tokens]
-§2  TECH_STACK          - Dependencies/Versions [150 tokens]
-§3  FILE_MAP            - Where is X? [200 tokens]
-§4  CRITICAL_ISSUES     - Blockers with line numbers [300 tokens]
-§5  IMPLEMENTATION      - What works/doesn't [250 tokens]
-§6  API_REFERENCE       - GraphQL ops [400 tokens]
-§7  PATTERNS            - Code templates [500 tokens]
-§8  QUICK_TASKS         - Common operations [300 tokens]
-§9  STATE_MANAGEMENT    - Data flow [200 tokens]
-§10 ROUTING             - Navigation [150 tokens]
+§1    PROJECT_IDENTITY    - What/Why/Who [100 tokens]
+§2    TECH_STACK          - Dependencies/Versions [150 tokens]
+§3    FILE_MAP            - Where is X? [200 tokens]
+§4    CRITICAL_ISSUES     - Blockers with line numbers [300 tokens]
+§5    IMPLEMENTATION      - What works/doesn't [250 tokens]
+§6    API_REFERENCE       - GraphQL ops [400 tokens]
+§7    PATTERNS            - Code templates [500 tokens]
+§8    QUICK_TASKS         - Common operations [300 tokens]
+§9    STATE_MANAGEMENT    - Data flow [200 tokens]
+§10   ROUTING             - Navigation [150 tokens]
+§11   DEVELOPMENT_COMMANDS - npm/docker [100 tokens]
+§11.5 VERCEL_DEPLOYMENT  - Deploy config [200 tokens] 🆕
+§12   NAMING_CONVENTIONS  - Code style [100 tokens]
+§13   TROUBLESHOOTING     - Common issues [200 tokens]
+§14   EXTERNAL_REFERENCES - Other docs [50 tokens]
+§15   PRIORITY_ACTIONS    - What to fix first [100 tokens]
+§16   METADATA            - Project info [50 tokens]
 ```
 
 ---
@@ -699,6 +706,64 @@ docker build -t synastr-frontend .
 
 # Docker run
 docker run -p 80:80 synastr-frontend
+```
+
+---
+
+## §11.5 VERCEL_DEPLOYMENT
+
+### Configuration
+```json
+// vercel.json
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": true  // ✅ ONLY main branch deploys
+    }
+  },
+  "ignoreCommand": "bash vercel-ignore.sh"
+}
+```
+
+### Deployment Strategy
+```
+✅ DEPLOYS:    main branch only (after PR merge)
+❌ IGNORES:    All feature branches, PR branches
+⏭️  SKIPPED:   Development branches (claude/*, feature/*, etc.)
+```
+
+### How It Works
+```
+1. Push to feature branch → Vercel checks vercel.json
+2. vercel-ignore.sh runs → Checks $VERCEL_GIT_COMMIT_REF
+3. If branch != "main" → exit 1 (skip build)
+4. If branch == "main" → exit 0 (deploy)
+```
+
+### Files
+```
+vercel.json          - Main config (deployment rules)
+vercel-ignore.sh     - Build decision script (executable)
+.vercelignore        - Files to exclude from upload
+```
+
+### Testing Locally
+```bash
+# Simulate Vercel check
+VERCEL_GIT_COMMIT_REF="feature/test" bash vercel-ignore.sh
+# → Should exit 1 (skip)
+
+VERCEL_GIT_COMMIT_REF="main" bash vercel-ignore.sh
+# → Should exit 0 (deploy)
+```
+
+### Override (Emergency Only)
+```bash
+# To force deploy from non-main branch (use sparingly):
+# 1. Temporarily edit vercel-ignore.sh
+# 2. Change condition to allow your branch
+# 3. Push
+# 4. REVERT immediately after
 ```
 
 ---
