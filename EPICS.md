@@ -6,24 +6,26 @@ Este documento describe las principales épicas del proyecto Synastr, una aplica
 
 ## 📊 Resumen de Implementación
 
-| Épica | Estado | Implementación |
-|-------|--------|----------------|
-| 1. Autenticación y Onboarding | ✅ Completo | 95% |
-| 2. Construcción de Perfil | ✅ Completo | 90% |
-| 3. Sistema de Descubrimiento | ✅ Completo | 85% |
-| 4. Gestión de Matches | ✅ Completo | 90% |
-| 5. Mensajería y Chat | ⚠️ En desarrollo | 10% |
-| 6. Perfil y Configuración | ✅ Completo | 85% |
-| 7. Integración Astrológica | ⚠️ Parcial | 80% |
-| 8. Gestión de Fotos | ✅ Completo | 95% |
+| Épica | Estado | Implementación | Notas |
+|-------|--------|----------------|-------|
+| 1. Autenticación y Onboarding | ⚠️ Parcial | **75%** | Falta geocodificación frontend |
+| 2. Construcción de Perfil | ⚠️ Parcial | **50%** | ⚠️ Upload fotos es MOCK |
+| 3. Sistema de Descubrimiento | ⚠️ Parcial | **70%** | Feed tiene inconsistencias |
+| 4. Gestión de Matches | ⚠️ Parcial | **80%** | Funcional pero depende del feed |
+| 5. Mensajería y Chat | ❌ No implementado | **10%** | Solo placeholder |
+| 6. Perfil y Configuración | ⚠️ Parcial | **75%** | Falta visualización carta natal |
+| 7. Integración Astrológica | ⚠️ Parcial | **55%** | Composable no integrado |
+| 8. Gestión de Fotos | ❌ Mock | **25%** | ⚠️ Cloudinary es FALSO |
 
-**Implementación General del Proyecto: ~78%**
+**Implementación General del Proyecto: ~52%**
+
+> ⚠️ **NOTA CRÍTICA**: Varios componentes tienen UIs completas pero funcionalidades mock/placeholder. Ver detalles abajo.
 
 ---
 
 ## 1️⃣ Épica: Autenticación y Onboarding
 
-**Implementación: 95%** ✅
+**Implementación: 75%** ⚠️
 
 ### Descripción
 Sistema completo de autenticación de usuarios que incluye registro, login y captura de datos astrológicos básicos para la generación de la carta natal.
@@ -73,8 +75,13 @@ Sistema completo de autenticación de usuarios que incluye registro, login y cap
   - Composable `useAuth()` para acceder al usuario autenticado
 - **Estado**: Completamente funcional
 
+### ⚠️ Limitaciones Encontradas
+- **Geocodificación**: El campo `birthPlace` es solo texto libre. No hay conversión a coordenadas (lat/lng/timezone) en el frontend - esto depende del backend (25%)
+- **Validación de lugar**: No hay autocompletado ni verificación de que el lugar existe
+
 ### Pendiente
 - Recuperación de contraseña (5%)
+- Geocodificación frontend con API (ej: Google Maps) (20%)
 
 ### Archivos Relacionados
 - `src/components/Landing.vue`
@@ -89,32 +96,49 @@ Sistema completo de autenticación de usuarios que incluye registro, login y cap
 
 ## 2️⃣ Épica: Construcción de Perfil
 
-**Implementación: 90%** ✅
+**Implementación: 50%** ⚠️ **BLOQUEADOR CRÍTICO**
 
 ### Descripción
 Sistema de completado de perfil que permite a los usuarios añadir fotos temáticas por signo zodiacal e información adicional detallada sobre su estilo de vida, preferencias y características personales.
 
 ### Features Implementadas
 
-#### ✅ Subida de Fotos por Signo Zodiacal
+#### ❌ Subida de Fotos por Signo Zodiacal **[MOCK - NO FUNCIONAL]**
 - **Componente**: `UploadPhotos.vue`
 - **Ruta**: `/upload-photos`
-- **Funcionalidad**:
-  - Grid interactivo de 13 espacios para fotos:
-    - 1 foto de perfil principal (obligatoria)
-    - 12 fotos temáticas opcionales (una por cada signo del zodíaco)
-  - Prompts personalizados por signo zodiacal para inspirar fotos:
+- **Funcionalidad UI** (✅ Implementada):
+  - Grid interactivo de 13 espacios para fotos
+  - 1 foto de perfil principal (obligatoria)
+  - 12 fotos temáticas opcionales (una por cada signo del zodíaco)
+  - Prompts personalizados por signo zodiacal:
     - **Aries**: "Comparte una foto tuya en plena acción"
     - **Taurus**: "Muestra un momento de placer sensorial"
     - **Gemini**: "Comparte una foto con amigos o conversando"
     - Etc. (12 prompts únicos)
-  - Preview de fotos antes de subir
-  - Eliminación de fotos individuales
-  - Integración con Cloudinary para almacenamiento
-- **Mutations GraphQL**:
-  - `UPLOAD_PHOTO_MUTATION`
-  - `DELETE_PHOTO_MUTATION`
-- **Estado**: Completamente funcional
+  - Preview de fotos antes de subir (✅)
+
+- **❌ PROBLEMA CRÍTICO - Integración FALSA**:
+  ```typescript
+  // src/components/UploadPhotos.vue:64-68
+  async function uploadToCloudinary(file: File): Promise<string> {
+    console.log(`Subiendo ${file.name} a Cloudinary...`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return `https://placehold.co/600x400/png?text=Uploaded+${file.name}`;
+  }
+  ```
+  - **NO sube realmente a Cloudinary**
+  - Solo espera 1 segundo y retorna URL de placeholder
+  - Las fotos NO se almacenan en ningún servidor
+  - Las URLs generadas son placeholders de placehold.co
+
+- **Mutations GraphQL**: Definidas pero NO utilizadas correctamente
+  - `UPLOAD_PHOTO_MUTATION` (existe en mutations.ts pero no se usa)
+  - `DELETE_PHOTO_MUTATION` (existe pero probablemente no funciona)
+
+- **Estado**:
+  - ✅ UI: 90%
+  - ❌ Funcionalidad backend: 10%
+  - **TOTAL: ~20%**
 
 #### ✅ Completar Información Adicional
 - **Componente**: `CompleteProfile.vue`
@@ -152,9 +176,15 @@ Sistema de completado de perfil que permite a los usuarios añadir fotos temáti
 - **Mutation GraphQL**: `UPDATE_PROFILE_MUTATION`
 - **Estado**: Completamente funcional
 
-### Pendiente
-- Validación de tamaño de archivos (5%)
-- Compresión automática de imágenes (5%)
+### Pendiente (CRÍTICO - 50%)
+- **Implementar upload REAL a Cloudinary** (30%)
+  - Configurar Cloudinary SDK
+  - Obtener credenciales de API
+  - Implementar upload real con progreso
+- **Usar UPLOAD_PHOTO_MUTATION correctamente** (10%)
+- **Implementar DELETE_PHOTO_MUTATION** (10%)
+- Validación de tamaño de archivos (3%)
+- Compresión automática de imágenes (2%)
 
 ### Archivos Relacionados
 - `src/components/UploadPhotos.vue`
@@ -167,7 +197,7 @@ Sistema de completado de perfil que permite a los usuarios añadir fotos temáti
 
 ## 3️⃣ Épica: Sistema de Descubrimiento
 
-**Implementación: 85%** ✅
+**Implementación: 70%** ⚠️
 
 ### Descripción
 Interfaz tipo Tinder para descubrir y evaluar perfiles de otros usuarios, con visualización de información astrológica y sistema de likes/dislikes.
@@ -195,19 +225,26 @@ Interfaz tipo Tinder para descubrir y evaluar perfiles de otros usuarios, con vi
 - **Mutation GraphQL**: `LIKE_USER_MUTATION`
 - **Estado**: Completamente funcional
 
-#### ✅ Feed Extendido con Información Adicional
+#### ⚠️ Feed Extendido con Información Adicional **[INCONSISTENCIAS]**
 - **Componente**: `Feed.vue`
 - **Ruta**: `/feed`
-- **Funcionalidad**: Versión alternativa de Swipe que incluye información adicional del perfil:
-  - Todos los campos de Swipe.vue
-  - Información de `userInfo`:
-    - Mascotas
-    - Estilo de comunicación
-    - Idiomas
-    - Intereses
-  - Misma funcionalidad de like/skip
-- **Query GraphQL**: `FEED_QUERY`
-- **Estado**: Completamente funcional
+- **Funcionalidad**: Versión alternativa de Swipe que incluye información adicional del perfil
+  - Muestra fotos, email, género
+  - Información adicional: mascotas, idiomas, intereses, drinking
+
+- **⚠️ PROBLEMAS ENCONTRADOS**:
+  - Usa query personalizada `getFeed` (no el `FEED_QUERY` estándar de queries.ts)
+  - **Inconsistencia de schema**: Usa `snake_case` en lugar de `camelCase`:
+    - `sexual_orientation` en vez de `sexualOrientation`
+    - `user_info` en vez de `userInfo`
+  - Esto sugiere que puede NO estar sincronizado con el backend actual
+  - No tiene funcionalidad de like/skip (solo muestra datos)
+
+- **Query GraphQL**: Query personalizada inline (no usa `FEED_QUERY` de queries.ts)
+- **Estado**:
+  - ✅ UI: 80%
+  - ⚠️ Integración backend: 40%
+  - **TOTAL: ~60%**
 
 #### ✅ Sistema de Likes
 - **Funcionalidad**:
@@ -235,7 +272,7 @@ Interfaz tipo Tinder para descubrir y evaluar perfiles de otros usuarios, con vi
 
 ## 4️⃣ Épica: Gestión de Matches
 
-**Implementación: 90%** ✅
+**Implementación: 80%** ⚠️
 
 ### Descripción
 Sistema para visualizar y gestionar usuarios con los que se ha hecho match (like mutuo) y usuarios que han dado like pero aún no han sido correspondidos.
@@ -331,7 +368,7 @@ Sistema de mensajería en tiempo real para que los usuarios puedan comunicarse c
 
 ## 6️⃣ Épica: Perfil y Configuración
 
-**Implementación: 85%** ✅
+**Implementación: 75%** ⚠️
 
 ### Descripción
 Sistema para visualizar y editar el perfil propio, así como actualizar preferencias del usuario.
@@ -385,7 +422,7 @@ Sistema para visualizar y editar el perfil propio, así como actualizar preferen
 
 ## 7️⃣ Épica: Integración Astrológica
 
-**Implementación: 80%** ⚠️
+**Implementación: 55%** ⚠️
 
 ### Descripción
 Sistema completo de astrología que incluye cálculo de cartas natales, almacenamiento de posiciones planetarias, visualización de gráficos astrológicos y algoritmos de compatibilidad.
@@ -405,16 +442,25 @@ Sistema completo de astrología que incluye cálculo de cartas natales, almacena
   - Almacena grados, signos y casa de cada planeta
 - **Estado**: Completamente funcional
 
-#### ✅ Visualización de Carta Natal
+#### ⚠️ Visualización de Carta Natal **[NO INTEGRADO]**
 - **Composable**: `useAstroChart.ts`
 - **Librería**: `@astrodraw/astrochart` v3.0.2
-- **Funcionalidad**:
+- **Funcionalidad del Composable**:
   - Dibuja carta natal circular
   - Muestra posiciones de planetas
   - Muestra casas astrológicas
   - Configuración de colores personalizable
   - Evita solapamiento de planetas con offset
-- **Estado**: Completamente funcional
+
+- **⚠️ PROBLEMA: Composable NO se usa en ningún componente**:
+  - `Profile.vue` NO muestra la carta natal gráfica
+  - `Swipe.vue` y `Feed.vue` solo muestran texto (Sun/Moon/Rising)
+  - El composable está implementado pero NO integrado en la UI
+
+- **Estado**:
+  - ✅ Composable: 95%
+  - ❌ Integración en componentes: 0%
+  - **TOTAL: ~50%**
 
 #### ✅ Almacenamiento de Datos Astrológicos
 - **Estructura de Datos**:
@@ -459,30 +505,33 @@ Sistema completo de astrología que incluye cálculo de cartas natales, almacena
 
 ## 8️⃣ Épica: Gestión de Fotos
 
-**Implementación: 95%** ✅
+**Implementación: 25%** ❌ **BLOQUEADOR CRÍTICO**
 
 ### Descripción
 Sistema completo para subir, almacenar, organizar y eliminar fotos de perfil con asociación a signos zodiacales.
 
 ### Features Implementadas
 
-#### ✅ Subida de Fotos
-- **Mutation GraphQL**: `UPLOAD_PHOTO_MUTATION`
+#### ❌ Subida de Fotos **[MOCK - NO FUNCIONAL]**
+- **Mutation GraphQL**: `UPLOAD_PHOTO_MUTATION` (definida pero NO usada)
 - **Funcionalidad**:
-  - Upload a Cloudinary
-  - Asociación de foto con signo zodiacal
-  - Validación de formato de imagen
-  - Preview antes de subir
-  - Feedback de progreso
-- **Estado**: Completamente funcional
+  - ❌ Upload a Cloudinary: **FALSO** (solo placeholder)
+  - ✅ Asociación de foto con signo zodiacal: UI funciona
+  - ✅ Validación de formato de imagen: Básica
+  - ✅ Preview antes de subir: Funcional
+  - ❌ Feedback de progreso: Fake (solo setTimeout)
+- **Estado**:
+  - ✅ UI y preview: 90%
+  - ❌ Upload real: 0%
+  - **TOTAL: ~20%**
 
-#### ✅ Eliminación de Fotos
-- **Mutation GraphQL**: `DELETE_PHOTO_MUTATION`
+#### ❌ Eliminación de Fotos **[PROBABLEMENTE NO FUNCIONAL]**
+- **Mutation GraphQL**: `DELETE_PHOTO_MUTATION` (definida pero probablemente no usada)
 - **Funcionalidad**:
-  - Elimina foto por URL
-  - Actualiza UI automáticamente
-  - Confirmación antes de eliminar
-- **Estado**: Completamente funcional
+  - ❌ Elimina foto por URL: No probado (depende de upload real)
+  - ⚠️ Actualiza UI automáticamente: Desconocido
+  - ❌ Confirmación antes de eliminar: No implementada
+- **Estado**: ~30%
 
 #### ✅ Organización por Signos Zodiacales
 - **Funcionalidad**:
@@ -503,7 +552,18 @@ Sistema completo para subir, almacenar, organizar y eliminar fotos de perfil con
   ```
 - **Estado**: Completamente funcional
 
-### Pendiente
+### Pendiente (CRÍTICO - 75%)
+- **Implementar upload REAL a Cloudinary** (40%)
+  - Configurar Cloudinary SDK o usar upload preset
+  - Obtener credenciales de API (cloud name, upload preset)
+  - Reemplazar función mock por upload real
+  - Manejar respuesta con URL real de Cloudinary
+- **Usar UPLOAD_PHOTO_MUTATION correctamente** (15%)
+  - Integrar mutation con upload real
+  - Enviar URL de Cloudinary al backend
+- **Implementar DELETE_PHOTO_MUTATION** (15%)
+  - Conectar con backend para eliminar fotos
+  - Actualizar UI después de eliminar
 - Edición/recorte de imágenes (3%)
 - Reordenamiento de fotos (2%)
 
@@ -515,28 +575,52 @@ Sistema completo para subir, almacenar, organizar y eliminar fotos de perfil con
 
 ## 📈 Roadmap de Prioridades
 
-### Alta Prioridad (Crítico para MVP)
-1. **Implementar sistema de Chat** (Épica 5)
+### 🔥 CRÍTICO - BLOQUEADORES (Sin esto la app NO funciona)
+1. **Implementar upload REAL de fotos a Cloudinary** (Épica 2 y 8) - **URGENTE**
+   - Actualmente es un MOCK que no sube nada
+   - Sin esto los usuarios NO pueden tener fotos reales
+   - Estimado: 2-3 días de trabajo
+   - Archivos: `src/components/UploadPhotos.vue:64-68`
+
+2. **Implementar sistema de Chat** (Épica 5)
    - WebSockets o GraphQL Subscriptions
    - Mensajería básica en tiempo real
    - UI de conversaciones
+   - Estimado: 5-7 días de trabajo
 
-### Media Prioridad (Mejora la experiencia)
-2. **Algoritmo de Compatibilidad Astrológica** (Épica 7)
-   - Cálculo de compatibilidad
+3. **Arreglar inconsistencias de Feed.vue** (Épica 3)
+   - Sincronizar schema (camelCase vs snake_case)
+   - Usar queries estandarizadas
+   - Agregar funcionalidad de like/skip
+   - Estimado: 1-2 días de trabajo
+
+### Alta Prioridad (Mejora significativa)
+4. **Integrar visualización de carta natal** (Épica 7)
+   - Usar `useAstroChart` composable en Profile.vue
+   - Mostrar gráfico visual de carta natal
+   - Estimado: 1 día de trabajo
+
+5. **Algoritmo de Compatibilidad Astrológica** (Épica 7)
+   - Cálculo de compatibilidad entre cartas natales
    - Ordenamiento inteligente del feed
+   - Estimado: 3-5 días de trabajo
 
-3. **Filtros de Búsqueda** (Épica 3)
+### Media Prioridad (Nice to have)
+6. **Geocodificación frontend** (Épica 1)
+   - Autocompletado de birthPlace
+   - Conversión a coordenadas
+
+7. **Filtros de Búsqueda** (Épica 3)
    - Filtrar por edad, distancia, preferencias
 
-4. **Notificaciones** (Épicas 4 y 5)
+8. **Notificaciones** (Épicas 4 y 5)
    - Nuevos matches
    - Nuevos mensajes
 
-### Baja Prioridad (Nice to have)
-5. **Recuperación de contraseña** (Épica 1)
-6. **Configuración de privacidad** (Épica 6)
-7. **Edición de imágenes** (Épica 8)
+### Baja Prioridad
+9. **Recuperación de contraseña** (Épica 1)
+10. **Configuración de privacidad** (Épica 6)
+11. **Edición de imágenes** (Épica 8)
 
 ---
 
@@ -557,13 +641,70 @@ Sistema completo para subir, almacenar, organizar y eliminar fotos de perfil con
 
 ## 📝 Notas Finales
 
-- **Estado General**: El proyecto está en un **78% de implementación**, con la mayoría de las funcionalidades core completas.
-- **Bloqueador Principal**: La **épica de Chat** (5) es el componente crítico faltante para el MVP.
-- **Fortaleza**: Excelente integración astrológica y sistema de perfiles completo.
-- **Oportunidad**: Implementar el algoritmo de compatibilidad astrológica diferenciará significativamente el producto de la competencia.
+### Estado General
+- **Implementación Real**: **~52%** (anteriormente estimado en 78%)
+- **Razón de la discrepancia**: Varios componentes tienen UIs completas pero funcionalidades mock/placeholder
+
+### 🚨 Bloqueadores Críticos Identificados
+
+1. **Upload de Fotos es FALSO** (Épicas 2 y 8)
+   - La función `uploadToCloudinary()` es un mock que solo retorna placeholders
+   - **Impacto**: Los usuarios NO pueden subir fotos reales
+   - **Ubicación**: `src/components/UploadPhotos.vue:64-68`
+   - **Prioridad**: 🔥 CRÍTICO
+
+2. **Chat no implementado** (Épica 5)
+   - Solo existe placeholder
+   - **Impacto**: Los matches no pueden comunicarse
+   - **Prioridad**: 🔥 CRÍTICO para MVP
+
+3. **Feed.vue tiene inconsistencias** (Épica 3)
+   - Schema desincronizado (snake_case vs camelCase)
+   - **Impacto**: Puede no funcionar con el backend real
+   - **Prioridad**: 🔥 CRÍTICO
+
+4. **Carta Natal no se visualiza** (Épica 7)
+   - Composable `useAstroChart` existe pero NO se usa
+   - **Impacto**: Pierde el valor diferencial del producto
+   - **Prioridad**: ⚠️ Alta
+
+### ✅ Fortalezas
+- Sistema de autenticación JWT robusto y funcional
+- UIs bien diseñadas y responsive
+- Estructura de GraphQL bien organizada
+- Composable de carta natal bien implementado (solo falta integrarlo)
+- Flujo de onboarding claro
+
+### ⚠️ Debilidades
+- Funcionalidades críticas son mocks (fotos)
+- Falta integración de componentes existentes (carta natal)
+- Inconsistencias de schema entre componentes
+- Falta de funcionalidades core (chat)
+
+### 🎯 Recomendación
+**Priorizar en orden**:
+1. Implementar upload REAL de fotos (2-3 días)
+2. Arreglar Feed.vue (1-2 días)
+3. Integrar visualización de carta natal (1 día)
+4. Implementar chat (5-7 días)
+
+**Con estas correcciones, el proyecto podría alcanzar ~75-80% de implementación funcional.**
 
 ---
 
-**Última actualización**: 2025-11-22
+**Última actualización**: 2025-11-22 (Revisión crítica y actualización de porcentajes reales)
 **Versión del proyecto**: 0.1.0
 **Rama**: `claude/identify-project-objectives-01CQz6uhrJ9jMMSgBdPUsBJK`
+
+---
+
+## 🔍 Metodología de Evaluación
+
+Esta evaluación se basó en:
+1. ✅ Lectura completa del código fuente de cada componente
+2. ✅ Verificación de integración con GraphQL mutations/queries
+3. ✅ Identificación de mocks, placeholders y TODOs
+4. ✅ Análisis de funcionalidad real vs UI solamente
+5. ✅ Búsqueda de inconsistencias de schema y naming
+
+**Archivos clave revisados**: 13 componentes Vue, 5 archivos GraphQL, 2 composables, router, auth, client
