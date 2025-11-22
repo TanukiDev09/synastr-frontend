@@ -1,0 +1,44 @@
+# Vercel Ignore
+# Files and directories that should not be uploaded to Vercel
+
+# Documentation (not needed in production)
+*.md
+!README.md
+EPICS.md
+Architecture.md
+Agents.md
+Claude.md
+PROJECT.md
+
+# Development files
+.git
+.gitignore
+.env.example
+.vscode
+.idea
+*.log
+*.swp
+*.swo
+
+# Test files (when implemented)
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+__tests__/
+
+# Node modules (Vercel installs them)
+node_modules/
+
+# Build artifacts (Vercel builds from source)
+dist/
+build/
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# CI/CD
+.github/
